@@ -1,0 +1,14 @@
+{
+  "name": "mi-semana",
+  "version": "0.2.0",
+  "description": "Panel y resumen semanal que reúnen las entregas de Moodle en un solo sitio",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "node --test tests/logica.test.js",
+    "abrir": "node -e \"require('child_process').exec((process.platform==='darwin'?'open':process.platform==='win32'?'start':'xdg-open')+' prototipo/index.html')\""
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

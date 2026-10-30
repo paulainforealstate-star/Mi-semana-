@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Prototipo navegable de Mi Semana: entregas de todas las asignaturas en un solo sitio.">
+<title>Mi Semana · Prototipo</title>
+<style>
+  :root {
+    --bg: #f4f6f9; --card: #ffffff; --ink: #1d2733; --muted: #4f5b6b; --line: #d5dce5;
+    --azul: #1f4e79; --naranja: #8a4b00; --verde: #1e6b30; --rojo: #9b1c1c;
+    --focus: #0b5cad;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14191f; --card: #1c232c; --ink: #e8edf3; --muted: #aab4c0; --line: #33404e;
+      --azul: #8fb8e0; --naranja: #f2b77a; --verde: #8fd19e; --rojo: #f19a9a; --focus: #9cc8ff; }
+    .alerta { background: #33270f !important; border-color: #6b4f1d !important; }
+    .estado.PENDIENTE { background: #1d2d40 !important; }
+    .estado.BORRADOR  { background: #33270f !important; }
+    .estado.ENVIADA   { background: #17301f !important; }
+    .estado.VENCIDA   { background: #3a1c1c !important; }
+    .btn.primario { color: #0f141a; }
+    .confirm { color: #0f141a; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.4;
+  }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  header { padding: 16px; background: var(--card); border-bottom: 1px solid var(--line); }
+  header h1 { margin: 0; font-size: 20px; }
+  header p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+  nav.tabs { display: flex; gap: 8px; padding: 12px 16px 0; flex-wrap: wrap; max-width: 520px; margin: 0 auto; }
+  nav.tabs [role="tab"], .btn {
+    font: inherit; font-size: 14px; min-height: 44px; padding: 8px 12px;
+    border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 8px; cursor: pointer;
+  }
+  nav.tabs [role="tab"][aria-selected="true"] { background: var(--azul); color: #fff; border-color: var(--azul); }
+  main { padding: 12px 16px 32px; max-width: 520px; margin: 0 auto; }
+  [hidden] { display: none !important; }
+
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .toolbar select { font: inherit; min-height: 44px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+
+  .alerta {
+    background: #fff4e5; border: 1px solid #e8b56b; color: var(--naranja);
+    border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 14px; font-weight: 600;
+  }
+  .lista { list-style: none; margin: 0; padding: 0; }
+  .entrega {
+    display: flex; gap: 12px; align-items: flex-start; background: var(--card);
+    border: 1px solid var(--line); border-left: 6px solid var(--c); border-radius: 10px;
+    padding: 12px; margin-bottom: 10px;
+  }
+  .entrega .cuerpo { flex: 1; min-width: 0; }
+  .asig { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .titulo { font-weight: 600; margin: 2px 0 4px; }
+  .meta { font-size: 13px; color: var(--muted); }
+  .estado {
+    font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 6px;
+    white-space: nowrap; border: 1px solid currentColor; max-width: 11em; white-space: normal; text-align: right;
+  }
+  .estado.PENDIENTE { color: var(--azul); background: #e8f0f8; }
+  .estado.BORRADOR  { color: var(--naranja); background: #fff4e5; }
+  .estado.ENVIADA   { color: var(--verde); background: #e6f4ea; }
+  .estado.VENCIDA   { color: var(--rojo); background: #fbe9e9; }
+  .vacio { text-align: center; color: var(--muted); padding: 24px 0; }
+
+  .acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .btn.primario { background: var(--azul); color: #fff; border-color: var(--azul); font-weight: 600; }
+
+  .confirm {
+    text-align: center; background: var(--verde); color: #fff; border-radius: 12px; padding: 28px 16px;
+  }
+  .confirm .icono { font-size: 56px; line-height: 1; }
+  .confirm .grande { font-size: 24px; font-weight: 800; letter-spacing: .04em; margin-top: 6px; }
+  .confirm .linea { font-size: 14px; margin-top: 6px; }
+  .confirm .copia { margin-top: 12px; background: rgba(255,255,255,.18); border-radius: 8px; padding: 8px; font-size: 14px; }
+  .nota { font-size: 13px; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-top: 12px; }
+
+  .correo { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .correo h2 { font-size: 17px; margin: 0 0 4px; }
+  .correo .sub { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+  .correo li { margin-bottom: 6px; font-size: 14px; }
+  .correo .aviso { font-size: 13px; color: var(--naranja); font-weight: 600; margin-top: 10px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  footer { max-width: 520px; margin: 0 auto; padding: 0 16px 24px; font-size: 12px; color: var(--muted); }
+  @media (prefers-reduced-motion: no-preference) { .entrega { transition: transform .15s; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Mi Semana</h1>
+  <p>Prototipo navegable · versión 2 · semana del 9 al 15 de noviembre de 2026</p>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Pantallas del prototipo">
+  <button role="tab" id="tab-panel" aria-controls="panel" aria-selected="true" tabindex="0">A · Panel</button>
+  <button role="tab" id="tab-confirm" aria-controls="confirm" aria-selected="false" tabindex="-1">B · Confirmación</button>
+  <button role="tab" id="tab-correo" aria-controls="correo" aria-selected="false" tabindex="-1">C · Correo del lunes</button>
+</nav>
+
+<main>
+
+  <!-- A · PANEL -->
+  <section id="panel" role="tabpanel" aria-labelledby="tab-panel">
+    <div class="toolbar">
+      <label class="sr-only" for="filtro-estado">Filtrar por estado</label>
+      <select id="filtro-estado">
+        <option value="TODAS">Todas</option>
+        <option value="PENDIENTE">Pendientes</option>
+        <option value="BORRADOR">Borradores</option>
+        <option value="ENVIADA">Enviadas</option>
+        <option value="VENCIDA">Vencidas</option>
+      </select>
+      <label class="sr-only" for="filtro-asig">Filtrar por asignatura</label>
+      <select id="filtro-asig"><option value="TODAS">Todas las asignaturas</option></select>
+    </div>
+
+    <div id="alertas"></div>
+    <ul class="lista" id="lista-entregas"></ul>
+    <p class="vacio" id="vacio" hidden>No hay entregas con este filtro.</p>
+
+    <div class="acciones">
+      <button class="btn primario" type="button" id="btn-calendario">Añadir a mi calendario (.ics)</button>
+      <button class="btn" type="button" data-ir="confirm">Ver confirmación de envío</button>
+    </div>
+    <p class="nota">Aviso 24 horas antes de cada plazo para entregas pendientes o en borrador.</p>
+  </section>
+
+  <!-- B · CONFIRMACIÓN -->
+  <section id="confirm" role="tabpanel" aria-labelledby="tab-confirm" hidden>
+    <div class="confirm" role="status">
+      <div class="icono" aria-hidden="true">✓</div>
+      <div class="grande">ENVIADA</div>
+      <div class="linea">11/11/2026 · 18:42</div>
+      <div class="linea">practica2_estadistica.pdf</div>
+      <div class="copia">Te hemos enviado una copia por correo electrónico</div>
+    </div>
+    <div class="nota">Un borrador no está entregado: aparece en naranja y con el texto «no entregada».</div>
+    <div class="acciones">
+      <button class="btn primario" type="button" data-ir="panel">Volver al panel</button>
+    </div>
+  </section>
+
+  <!-- C · CORREO -->
+  <section id="correo" role="tabpanel" aria-labelledby="tab-correo" hidden>
+    <div class="correo">
+      <h2>Tu semana: <span id="n-semana">0</span> entregas</h2>
+      <p class="sub">Lunes 08:00 · sustituye a los avisos sueltos</p>
+      <ul id="lista-correo"></ul>
+      <p class="aviso">Aviso 24 horas antes de cada plazo.</p>
+    </div>
+    <div class="acciones">
+      <button class="btn primario" type="button" data-ir="panel">Abrir Mi Semana</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Datos de ejemplo. La lógica está en <code>logica.js</code> y se prueba con <code>npm test</code>.
+</footer>
+
+<script src="datos.js"></script>
+<script src="logica.js"></script>
+<script>
+  (function () {
+    var M = window.MiSemana;
+    var D = window.MiSemanaDatos;
+    var AHORA = D.ahora;
+    var ENTREGAS = D.entregas;
+
+    function esc(s) { var d = document.createElement("div"); d.textContent = String(s); return d.innerHTML; }
+    var MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+    var DIAS = ["dom","lun","mar","mié","jue","vie","sáb"];
+    function fechaCorta(iso) {
+      var p = iso.split("-"), d = new Date(+p[0], +p[1] - 1, +p[2]);
+      return DIAS[d.getDay()] + " " + d.getDate() + " " + MESES[d.getMonth()];
+    }
+
+    function pintarAsignaturas() {
+      var nombres = [];
+      ENTREGAS.forEach(function (e) { if (nombres.indexOf(e.asig) < 0) nombres.push(e.asig); });
+      document.getElementById("filtro-asig").innerHTML =
+        '<option value="TODAS">Todas las asignaturas</option>' +
+        nombres.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + "</option>"; }).join("");
+    }
+
+    function pintarAlertas() {
+      document.getElementById("alertas").innerHTML = M.coincidencias(ENTREGAS, AHORA).map(function (c) {
+        var lista = c.entregas.map(function (e) { return e.asig + " (" + e.peso + " %)"; }).join(" · ");
+        return '<div class="alerta" role="status">' + fechaCorta(c.dia) + ": " + c.entregas.length +
+               " entregas coinciden: " + esc(lista) + "</div>";
+      }).join("");
+    }
+
+    function pintarPanel() {
+      var filtro = {
+        estado: document.getElementById("filtro-estado").value,
+        asig: document.getElementById("filtro-asig").value
+      };
+      var visibles = M.filtrar(ENTREGAS, filtro, AHORA);
+      document.getElementById("lista-entregas").innerHTML = visibles.map(function (e) {
+        return '<li class="entrega" style="--c:' + esc(e.color) + '">' +
+          '<div class="cuerpo">' +
+            '<div class="asig">' + esc(e.asig) + "</div>" +
+            '<div class="titulo">' + esc(e.titulo) + "</div>" +
+            '<div class="meta">' + fechaCorta(e.fecha) + " · " + e.hora + " · peso " + e.peso + " %</div>" +
+          "</div>" +
+          '<span class="estado ' + M.estadoEfectivo(e, AHORA) + '">' + esc(M.textoEstado(e, AHORA)) + "</span>" +
+        "</li>";
+      }).join("");
+      document.getElementById("vacio").hidden = visibles.length > 0;
+    }
+
+    function pintarCorreo() {
+      var semana = M.resumenSemanal(ENTREGAS, "2026-11-09", "2026-11-15");
+      document.getElementById("n-semana").textContent = semana.length;
+      document.getElementById("lista-correo").innerHTML = semana.map(function (e) {
+        return "<li>" + fechaCorta(e.fecha) + " · " + esc(e.asig) + " (" + e.peso + " %) · " +
+               esc(M.estadoEfectivo(e, AHORA)) + "</li>";
+      }).join("");
+    }
+
+    function descargarIcs() {
+      var blob = new Blob([M.generarIcs(ENTREGAS, AHORA)], { type: "text/calendar;charset=utf-8" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "mi-semana.ics";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    }
+
+    // Pestañas accesibles: flechas izquierda y derecha, Inicio y Fin.
+    var pestanas = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+    function mostrar(id, enfocar) {
+      pestanas.forEach(function (t) {
+        var activa = t.getAttribute("aria-controls") === id;
+        t.setAttribute("aria-selected", String(activa));
+        t.tabIndex = activa ? 0 : -1;
+        if (activa && enfocar) t.focus();
+      });
+      document.querySelectorAll('[role="tabpanel"]').forEach(function (p) { p.hidden = p.id !== id; });
+    }
+    pestanas.forEach(function (t, i) {
+      t.addEventListener("click", function () { mostrar(t.getAttribute("aria-controls")); });
+      t.addEventListener("keydown", function (ev) {
+        var n = null;
+        if (ev.key === "ArrowRight") n = pestanas[(i + 1) % pestanas.length];
+        else if (ev.key === "ArrowLeft") n = pestanas[(i - 1 + pestanas.length) % pestanas.length];
+        else if (ev.key === "Home") n = pestanas[0];
+        else if (ev.key === "End") n = pestanas[pestanas.length - 1];
+        if (n) { ev.preventDefault(); mostrar(n.getAttribute("aria-controls"), true); }
+      });
+    });
+    document.querySelectorAll("[data-ir]").forEach(function (b) {
+      b.addEventListener("click", function () { mostrar(b.dataset.ir); });
+    });
+
+    document.getElementById("filtro-estado").addEventListener("change", pintarPanel);
+    document.getElementById("filtro-asig").addEventListener("change", pintarPanel);
+    document.getElementById("btn-calendario").addEventListener("click", descargarIcs);
+
+    pintarAsignaturas();
+    pintarAlertas();
+    pintarPanel();
+    pintarCorreo();
+    mostrar("panel");
+  })();
+</script>
+</body>
+</html>
